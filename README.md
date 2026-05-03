@@ -42,10 +42,10 @@ dbqk/
 ## 安装
 
 ```bash
-pip install -r requirements.txt
+pip install dbqk
 ```
 
-`requirements.txt`:
+`依赖如下`:
 
 ```
 pymysql>=1.1.0
