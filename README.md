@@ -19,40 +19,42 @@
 
 ```
 dbqk/
-├── dbqk/                         # 主包
-│   ├── __init__.py               # 转发入口（默认导出 MySQL 管理器）
-│   ├── mysql_manager/            # MySQL 子包
-│   │   ├── __init__.py
-│   │   ├── database.py           # Database 连接池主类
-│   │   ├── table.py              # Table 表对象
-│   │   ├── result.py             # ExecResult 结果统一封装
-│   │   └── exceptions.py         # 自定义异常
-│   ├── pgsql_manager/            # PostgreSQL 子包
-│   │   ├── __init__.py
-│   │   ├── database.py
-│   │   ├── table.py
-│   │   ├── result.py
-│   │   └── exceptions.py
-│   └── _tests/
-│       ├── mysql/                # MySQL 测试脚本（直接运行）
-│       │   ├── _helpers.py
-│       │   ├── test_connect.py
-│       │   ├── test_insert.py
-│       │   ├── test_select.py
-│       │   ├── test_update.py
-│       │   ├── test_delete.py
-│       │   ├── test_exec.py
-│       │   └── test_table_dict.py
-│       └── pgsql/                # PostgreSQL 测试脚本
-│           ├── _helpers.py
-│           ├── test_connect.py
-│           ├── test_insert.py
-│           ├── test_select.py
-│           ├── test_update.py
-│           ├── test_delete.py
-│           ├── test_exec.py
-│           └── test_table_dict.py
-└── pyproject.toml
+├── __init__.py                   # 转发入口（默认导出 MySQL 管理器）
+├── mysql_manager/                # MySQL 子包
+│   ├── __init__.py
+│   ├── database.py               # Database 连接池主类
+│   ├── table.py                  # Table 表对象
+│   ├── result.py                 # ExecResult 结果统一封装
+│   └── exceptions.py             # 自定义异常
+├── pgsql_manager/                # PostgreSQL 子包
+│   ├── __init__.py
+│   ├── database.py
+│   ├── table.py
+│   ├── result.py
+│   └── exceptions.py
+├── _tests/
+│   ├── mysql/                    # MySQL 测试脚本（直接运行）
+│   │   ├── _helpers.py
+│   │   ├── test_connect.py
+│   │   ├── test_insert.py
+│   │   ├── test_select.py
+│   │   ├── test_update.py
+│   │   ├── test_delete.py
+│   │   ├── test_exec.py
+│   │   └── test_table_dict.py
+│   └── pgsql/                    # PostgreSQL 测试脚本
+│       ├── _helpers.py
+│       ├── test_connect.py
+│       ├── test_insert.py
+│       ├── test_select.py
+│       ├── test_update.py
+│       ├── test_delete.py
+│       ├── test_exec.py
+│       └── test_table_dict.py
+├── pyproject.toml
+├── README.md
+├── LICENSE
+└── requirements.txt
 ```
 
 ---
