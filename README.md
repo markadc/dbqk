@@ -1,6 +1,6 @@
 # dbqk
 
-一个轻量级的 MySQL 连接管理 + CRUD 封装库，基于 [`DBUtils`](https://pypi.org/project/dbutils/) 连接池和 [`PyMySQL`](https://pypi.org/project/PyMySQL/)。
+一个轻量级的 MySQL / PostgreSQL 连接管理 + CRUD 封装库，基于 [`DBUtils`](https://pypi.org/project/dbutils/) 连接池，底层驱动为 [`PyMySQL`](https://pypi.org/project/PyMySQL/) 和 [`psycopg2`](https://pypi.org/project/psycopg2/)。
 
 ## 特性
 
@@ -19,22 +19,40 @@
 
 ```
 dbqk/
-├── mysql_manager/              # 主包
-│   ├── __init__.py
-│   ├── database.py             # Database 连接池主类
-│   ├── table.py                # Table 表对象
-│   ├── result.py               # ExecResult 结果统一封装
-│   └── exceptions.py           # 自定义异常
-├── _tests/                     # 测试脚本（直接运行，无依赖 pytest）
-│   ├── _helpers.py             # 公共配置
-│   ├── test_connect.py
-│   ├── test_insert.py
-│   ├── test_select.py
-│   ├── test_update.py
-│   ├── test_delete.py
-│   ├── test_exec.py
-│   └── test_table_dict.py
-└── requirements.txt
+├── dbqk/                         # 主包
+│   ├── __init__.py               # 转发入口（默认导出 MySQL 管理器）
+│   ├── mysql_manager/            # MySQL 子包
+│   │   ├── __init__.py
+│   │   ├── database.py           # Database 连接池主类
+│   │   ├── table.py              # Table 表对象
+│   │   ├── result.py             # ExecResult 结果统一封装
+│   │   └── exceptions.py         # 自定义异常
+│   ├── pgsql_manager/            # PostgreSQL 子包
+│   │   ├── __init__.py
+│   │   ├── database.py
+│   │   ├── table.py
+│   │   ├── result.py
+│   │   └── exceptions.py
+│   └── _tests/
+│       ├── mysql/                # MySQL 测试脚本（直接运行）
+│       │   ├── _helpers.py
+│       │   ├── test_connect.py
+│       │   ├── test_insert.py
+│       │   ├── test_select.py
+│       │   ├── test_update.py
+│       │   ├── test_delete.py
+│       │   ├── test_exec.py
+│       │   └── test_table_dict.py
+│       └── pgsql/                # PostgreSQL 测试脚本
+│           ├── _helpers.py
+│           ├── test_connect.py
+│           ├── test_insert.py
+│           ├── test_select.py
+│           ├── test_update.py
+│           ├── test_delete.py
+│           ├── test_exec.py
+│           └── test_table_dict.py
+└── pyproject.toml
 ```
 
 ---
@@ -45,21 +63,23 @@ dbqk/
 pip install dbqk
 ```
 
-`依赖如下`:
+或手动安装依赖：
 
-```
-pymysql>=1.1.0
-dbutils>=3.1.0
+```bash
+pip install pymysql psycopg2-binary dbutils
 ```
 
 > 要求 Python **3.10+**（使用了 `X | None` 联合类型语法）。
+> 如果只用一种数据库，只装对应驱动即可（`pymysql` 或 `psycopg2-binary`）。
 
 ---
 
 ## 快速开始
 
+### MySQL
+
 ```python
-from mysql_manager import Database
+from dbqk import Database
 
 db = Database(
     host="127.0.0.1",
@@ -69,15 +89,32 @@ db = Database(
     database="test",
 )
 
-# 字典式拿到表对象
 users = db["users"]
-
-# CRUD
 uid = users.insert({"name": "Tom", "age": 18}).lastrowid
 rows = users.select(where={"age__gte": 18}).rows
 users.update({"age": 20}, where={"id": uid})
 users.delete(where={"id": uid})
+db.close()
+```
 
+### PostgreSQL
+
+```python
+from dbqk.pgsql_manager import Database
+
+db = Database(
+    host="127.0.0.1",
+    port=5432,
+    user="postgres",
+    password="admin0",
+    database="test",
+)
+
+users = db["users"]
+uid = users.insert({"name": "Tom", "age": 18}).lastrowid
+rows = users.select(where={"age__gte": 18}).rows
+users.update({"age": 20}, where={"id": uid})
+users.delete(where={"id": uid})
 db.close()
 ```
 
@@ -87,17 +124,33 @@ db.close()
 
 ### 1. `Database`：数据库 + 连接池
 
+**MySQL**：
+
 ```python
 db = Database(
     host="127.0.0.1", port=3306,
     user="root", password="admin0", database="test",
     charset="utf8mb4",
-    mincached=2,         # 启动时初始空闲连接
-    maxcached=5,         # 最多保留的空闲连接
-    maxconnections=20,   # 池上限
-    blocking=True,       # 达上限时阻塞等待
+    mincached=2, maxcached=5, maxconnections=20,
+    blocking=True,
 )
 ```
+
+**PostgreSQL**：
+
+```python
+from dbqk.pgsql_manager import Database
+
+db = Database(
+    host="127.0.0.1", port=5432,
+    user="postgres", password="admin0", database="test",
+    client_encoding="UTF8",
+    mincached=2, maxcached=5, maxconnections=20,
+    blocking=True,
+)
+```
+
+两者 API 完全一致。
 
 **字典式访问表对象**：
 
@@ -108,7 +161,7 @@ db["orders"]               # 第二次访问返回同一对象
 del db["users"]            # 移出缓存
 
 # 手动绑定（自定义子类时常用）
-from mysql_manager import Table
+from dbqk import Table
 db["users"] = Table(db, "users")
 ```
 
@@ -137,11 +190,11 @@ db.exec(
 ) -> ExecResult
 ```
 
-| SQL 类型                       | 主要属性                              |
-| ------------------------------ | ------------------------------------- |
-| SELECT / SHOW / DESC / EXPLAIN | `.rows` / `.first` / `.scalar` / 迭代 |
-| INSERT                         | `.lastrowid` / `.rowcount`            |
-| UPDATE / DELETE                | `.rowcount`                           |
+| SQL 类型                   | 主要属性                              |
+| -------------------------- | ------------------------------------- |
+| SELECT / SHOW / EXPLAIN …  | `.rows` / `.first` / `.scalar` / 迭代 |
+| INSERT                     | `.lastrowid` / `.rowcount`            |
+| UPDATE / DELETE            | `.rowcount`                           |
 
 ---
 
@@ -194,8 +247,9 @@ db.exec(
 
 ## Demo & 示例输出
 
-> 测试表结构（`_tests/_helpers.py` 中创建）：
+> 测试表结构：
 >
+> **MySQL**：
 > ```sql
 > CREATE TABLE `test` (
 >   `id`   INT AUTO_INCREMENT PRIMARY KEY,
@@ -203,6 +257,17 @@ db.exec(
 >   `age`  INT NOT NULL DEFAULT 0
 > );
 > ```
+>
+> **PostgreSQL**：
+> ```sql
+> CREATE TABLE "test" (
+>   "id"   SERIAL PRIMARY KEY,
+>   "name" VARCHAR(64) NOT NULL,
+>   "age"  INT NOT NULL DEFAULT 0
+> );
+> ```
+>
+> 以下所有 Demo 的 Table API 在 MySQL 和 PostgreSQL 中**完全一致**。
 
 ### Demo 1：连接
 
@@ -386,7 +451,7 @@ print(bool(r))                             # False
 ### Demo 7：表对象字典式访问
 
 ```python
-from mysql_manager import Table
+from dbqk import Table
 
 # 自动创建并缓存
 t1 = db["test"]
@@ -413,10 +478,18 @@ db["test"]
 ## 异常
 
 ```python
-from mysql_manager import (
+# MySQL
+from dbqk import (
     MySQLManagerError,    # 基础异常
     ExecError,            # SQL 执行失败（自动 rollback）
     TableNotFoundError,   # 预留
+)
+
+# PostgreSQL
+from dbqk.pgsql_manager import (
+    PgsqlManagerError,
+    ExecError,
+    TableNotFoundError,
 )
 
 try:
@@ -431,37 +504,36 @@ except ExecError as e:
 
 测试不依赖 pytest，每个文件一个功能，直接 `python` 运行。
 
-### 1. 配置数据库
-
-编辑 `_tests/_helpers.py` 里的 `TEST_DB_CONFIG`：
-
-```python
-TEST_DB_CONFIG = {
-    "host": "127.0.0.1",
-    "port": 3306,
-    "user": "root",
-    "password": "admin0",
-    "database": "test",
-}
-TEST_TABLE = "test"
-```
-
-确保该数据库已创建：
-
-```sql
-CREATE DATABASE test DEFAULT CHARSET utf8mb4;
-```
-
-### 2. 运行
+### MySQL 测试
 
 ```bash
-python _tests/test_connect.py        # 连接
-python _tests/test_insert.py         # 插入
-python _tests/test_select.py         # 查询
-python _tests/test_update.py         # 更新
-python _tests/test_delete.py         # 删除
-python _tests/test_exec.py           # 底层 exec 全功能
-python _tests/test_table_dict.py     # 字典式访问
+cd dbqk/_tests/mysql
+
+# 编辑 _helpers.py 配置连接信息
+
+python test_connect.py
+python test_insert.py
+python test_select.py
+python test_update.py
+python test_delete.py
+python test_exec.py
+python test_table_dict.py
+```
+
+### PostgreSQL 测试
+
+```bash
+cd dbqk/_tests/pgsql
+
+# 编辑 _helpers.py 配置连接信息
+
+python test_connect.py
+python test_insert.py
+python test_select.py
+python test_update.py
+python test_delete.py
+python test_exec.py
+python test_table_dict.py
 ```
 
 每个脚本运行结束会打印 `✓ xxx 测试通过`。
@@ -470,16 +542,17 @@ python _tests/test_table_dict.py     # 字典式访问
 
 ## 设计要点速查
 
-| 设计         | 实现                                               |
-| ------------ | -------------------------------------------------- |
-| 连接池       | `DBUtils.PooledDB(creator=pymysql, ping=1, ...)`   |
-| 自动事务     | `_cursor` 上下文管理器：异常 rollback、正常 commit |
-| 连接归还     | `conn.close()` 实际归还到池而不是真关闭            |
-| dict / tuple | 切换 `pymysql.cursors.DictCursor` / `Cursor`       |
-| SQL 注入防护 | 全部用 `%s` 参数化，列名加反引号                   |
-| 表对象缓存   | `Database._tables: dict[str, Table]`               |
-| 删除护栏     | 空 where 直接抛 `ValueError`                       |
-| 统一返回     | 所有 SQL 都封装为 `ExecResult`                     |
+| 设计         | MySQL 实现                                              | PostgreSQL 实现                                                |
+| ------------ | ------------------------------------------------------- | -------------------------------------------------------------- |
+| 连接池       | `PooledDB(creator=pymysql, ping=1, ...)`                | `PooledDB(creator=psycopg2, ping=1, ...)`                      |
+| 自动事务     | `_cursor` 上下文管理器：异常 rollback、正常 commit       | 同左                                                           |
+| 连接归还     | `conn.close()` 实际归还到池而不是真关闭                   | 同左                                                           |
+| dict / tuple | `pymysql.cursors.DictCursor` / `Cursor`                 | `psycopg2.extras.RealDictCursor` / 普通 Cursor                 |
+| SQL 注入防护 | `%s` 参数化 + 反引号标识符                               | `%s` 参数化 + 双引号标识符                                      |
+| 自增 id      | `cursor.lastrowid`（自动）                               | `lastrowid == 0` 时自动 `SELECT lastval()`                      |
+| 表对象缓存   | `Database._tables: dict[str, Table]`                    | 同左                                                           |
+| 删除护栏     | 空 where 直接抛 `ValueError`                            | 同左                                                           |
+| 统一返回     | 所有 SQL 都封装为 `ExecResult`                           | 同左                                                           |
 
 ---
 

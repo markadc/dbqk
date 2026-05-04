@@ -1,10 +1,10 @@
 """测试 Database 字典式访问表对象。
 
 直接运行：
-    python _tests/test_table_dict.py
+    python _tests/pgsql/test_table_dict.py
 """
 from _helpers import get_db, TEST_TABLE
-from mysql_manager import Table
+from dbqk.pgsql_manager import Table
 
 
 def main() -> None:

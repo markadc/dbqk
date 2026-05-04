@@ -4,9 +4,9 @@ import os
 import sys
 
 # 把项目根目录加到 sys.path，方便直接 python _tests/xxx.py 运行
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 
-from mysql_manager import Database  # noqa: E402
+from dbqk.mysql_manager import Database  # noqa: E402
 
 
 TEST_DB_CONFIG = {

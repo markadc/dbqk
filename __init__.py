@@ -1,4 +1,4 @@
-from .mysql_manager import (
+from dbqk.mysql_manager import (
     Database,
     Table,
     FetchMode,
@@ -7,6 +7,7 @@ from .mysql_manager import (
     ExecError,
     TableNotFoundError,
 )
+from dbqk import pgsql_manager
 
 __all__ = [
     "Database",
@@ -16,6 +17,7 @@ __all__ = [
     "MySQLManagerError",
     "ExecError",
     "TableNotFoundError",
+    "pgsql_manager",
 ]
 
 __version__ = "0.1.0"

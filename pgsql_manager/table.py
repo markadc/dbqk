@@ -1,4 +1,4 @@
-from dbqk.mysql_manager.result import ExecResult
+from dbqk.pgsql_manager.result import ExecResult
 
 
 class Table:
@@ -12,18 +12,11 @@ class Table:
     """
 
     def __init__(self, db, name: str):
-        """初始化表对象。
-
-        Args:
-            db: 关联的 ``Database`` 实例。
-            name: 表名。
-        """
         self._db = db
         self._name = name
 
     @property
     def name(self) -> str:
-        """返回表名。"""
         return self._name
 
     @staticmethod
@@ -45,7 +38,7 @@ class Table:
 
         Returns:
             tuple: ``(sql_clause, params_list)``。
-            sql_clause 形如 ``" WHERE `a` = %s AND `b` > %s"``。
+            sql_clause 形如 ``" WHERE "a" = %s AND "b" > %s"``。
         """
         if not where:
             return "", []
@@ -57,9 +50,9 @@ class Table:
         for k, v in where.items():
             if "__" in k:
                 col, op = k.rsplit("__", 1)
-                keys.append(f"`{col}` {op_map.get(op, '=')} %s")
+                keys.append(f'"{col}" {op_map.get(op, "=")} %s')
             else:
-                keys.append(f"`{k}` = %s")
+                keys.append(f'"{k}" = %s')
             values.append(v)
         return " WHERE " + " AND ".join(keys), values
 
@@ -78,20 +71,22 @@ class Table:
         """
         if isinstance(data, dict):
             cols = list(data.keys())
+            cols_str = ", ".join(f'"{c}"' for c in cols)
             placeholders = ", ".join(["%s"] * len(cols))
             sql = (
-                f"INSERT INTO `{self._name}` "
-                f"({', '.join(f'`{c}`' for c in cols)}) "
+                f'INSERT INTO "{self._name}" '
+                f"({cols_str}) "
                 f"VALUES ({placeholders})"
             )
             return self._db.exec(sql, list(data.values()), **kwargs)
 
         if isinstance(data, list) and data:
             cols = list(data[0].keys())
+            cols_str = ", ".join(f'"{c}"' for c in cols)
             placeholders = ", ".join(["%s"] * len(cols))
             sql = (
-                f"INSERT INTO `{self._name}` "
-                f"({', '.join(f'`{c}`' for c in cols)}) "
+                f'INSERT INTO "{self._name}" '
+                f"({cols_str}) "
                 f"VALUES ({placeholders})"
             )
             params = [[row[c] for c in cols] for row in data]
@@ -121,8 +116,8 @@ class Table:
         Returns:
             ExecResult: 通过 ``.rows`` / ``.first`` / ``.scalar`` 访问数据。
         """
-        cols = "*" if not columns else ", ".join(f"`{c}`" for c in columns)
-        sql = f"SELECT {cols} FROM `{self._name}`"
+        cols = "*" if not columns else ", ".join(f'"{c}"' for c in columns)
+        sql = f'SELECT {cols} FROM "{self._name}"'
         where_sql, params = self._build_where(where)
         sql += where_sql
         if order_by:
@@ -154,7 +149,7 @@ class Table:
         Returns:
             int: 记录数。该方法直接返回整数，方便日常使用。
         """
-        sql = f"SELECT COUNT(*) AS cnt FROM `{self._name}`"
+        sql = f'SELECT COUNT(*) AS cnt FROM "{self._name}"'
         where_sql, params = self._build_where(where)
         sql += where_sql
         result = self._db.exec(sql, params, fetch_mode="dict")
@@ -175,8 +170,8 @@ class Table:
         """
         if not data:
             raise ValueError("update 数据不能为空")
-        set_clause = ", ".join(f"`{k}` = %s" for k in data.keys())
-        sql = f"UPDATE `{self._name}` SET {set_clause}"
+        set_clause = ", ".join(f'"{k}" = %s' for k in data.keys())
+        sql = f'UPDATE "{self._name}" SET {set_clause}'
         params = list(data.values())
         where_sql, where_params = self._build_where(where)
         sql += where_sql
@@ -197,7 +192,7 @@ class Table:
         Raises:
             ValueError: 未提供 where 时抛出（防止误删全表）。
         """
-        sql = f"DELETE FROM `{self._name}`"
+        sql = f'DELETE FROM "{self._name}"'
         where_sql, params = self._build_where(where)
         if not where_sql:
             raise ValueError("拒绝执行无 WHERE 的 DELETE，请显式传入 where={...}")

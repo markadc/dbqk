@@ -25,11 +25,11 @@ pip install -r requirements.txt
 ## 运行
 
 ```bash
-python _tests/test_connect.py
-python _tests/test_insert.py
-python _tests/test_select.py
-python _tests/test_update.py
-python _tests/test_delete.py
-python _tests/test_exec.py
-python _tests/test_table_dict.py
+python _tests/mysql/test_connect.py
+python _tests/mysql/test_insert.py
+python _tests/mysql/test_select.py
+python _tests/mysql/test_update.py
+python _tests/mysql/test_delete.py
+python _tests/mysql/test_exec.py
+python _tests/mysql/test_table_dict.py
 ```
