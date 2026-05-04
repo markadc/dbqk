@@ -129,6 +129,8 @@ db.close()
 **MySQL**：
 
 ```python
+from dbqk.mysql_manager import Database
+
 db = Database(
     host="127.0.0.1", port=3306,
     user="root", password="admin0", database="test",
