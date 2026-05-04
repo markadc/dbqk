@@ -81,7 +81,7 @@ pip install pymysql psycopg2-binary dbutils
 ### MySQL
 
 ```python
-from dbqk import Database
+from dbqk.mysql_manager import Database
 
 db = Database(
     host="127.0.0.1",
@@ -163,7 +163,7 @@ db["orders"]               # 第二次访问返回同一对象
 del db["users"]            # 移出缓存
 
 # 手动绑定（自定义子类时常用）
-from dbqk import Table
+from dbqk.mysql_manager import Table
 db["users"] = Table(db, "users")
 ```
 
@@ -453,7 +453,7 @@ print(bool(r))                             # False
 ### Demo 7：表对象字典式访问
 
 ```python
-from dbqk import Table
+from dbqk.mysql_manager import Table
 
 # 自动创建并缓存
 t1 = db["test"]
@@ -481,7 +481,7 @@ db["test"]
 
 ```python
 # MySQL
-from dbqk import (
+from dbqk.mysql_manager import (
     MySQLManagerError,    # 基础异常
     ExecError,            # SQL 执行失败（自动 rollback）
     TableNotFoundError,   # 预留
