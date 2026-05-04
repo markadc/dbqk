@@ -157,9 +157,14 @@ class Database:
 
         with self._cursor(fetch_mode) as (conn, cursor):
             if many:
-                cursor.executemany(sql, params or [])
+                total_rowcount = 0
+                for p in (params or []):
+                    cursor.execute(sql, p)
+                    total_rowcount += cursor.rowcount
+                rowcount = total_rowcount
             else:
                 cursor.execute(sql, params or ())
+                rowcount = cursor.rowcount
 
             rows = None
             if sql_head in ("SELECT", "SHOW", "EXPLAIN", "WITH", "TABLE") and fetch:
@@ -172,14 +177,15 @@ class Database:
                 try:
                     cursor.execute("SELECT lastval()")
                     row = cursor.fetchone()
-                    lastrowid = row[0] if row else lastrowid
+                    if row is not None:
+                        lastrowid = next(iter(row.values())) if isinstance(row, dict) else row[0]
                 except Exception:
                     pass
 
             return ExecResult(
                 rows=rows,
                 lastrowid=lastrowid,
-                rowcount=cursor.rowcount,
+                rowcount=rowcount,
                 sql=sql,
                 params=params,
                 sql_kind=sql_head,
