@@ -1,10 +1,10 @@
 """测试公用：数据库连接配置 + 建表/清表工具。"""
 
-import os
 import sys
+from pathlib import Path
 
 # 把项目根目录加到 sys.path，方便直接 python _tests/xxx.py 运行
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
 from dbqk.mysql_manager import Database  # noqa: E402
 
